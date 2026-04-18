@@ -1,15 +1,33 @@
 #!/usr/bin/env php
 <?php
 
-// Find autoload - check vendor first (installed as package), then local (dev)
-if (file_exists(__DIR__ . '/vendor/autoload.php')) {
-    require __DIR__ . '/vendor/autoload.php';
-} elseif (file_exists(__DIR__ . '/autoload.php')) {
-    require __DIR__ . '/autoload.php';
-} else {
-    echo "Error: autoload.php not found. Run 'composer install' first.\n";
+declare(strict_types=1);
+
+// Prefer Composer's bin proxy autoload path when installed as a dependency.
+$autoload = $_composer_autoload_path ?? null;
+
+// Fallbacks for local/dev execution.
+if (!$autoload || !file_exists($autoload)) {
+    $candidates = [
+            __DIR__ . '/vendor/autoload.php', // local package development
+            __DIR__ . '/autoload.php',        // package root custom autoloader
+    ];
+
+    $autoload = null;
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate)) {
+            $autoload = $candidate;
+            break;
+        }
+    }
+}
+
+if (!$autoload || !file_exists($autoload)) {
+    fwrite(STDERR, "Error: autoload.php not found. Run 'composer install' first.\n");
     exit(1);
 }
+
+require $autoload;
 
 use Nudelsalat\Config;
 use Nudelsalat\Bootstrap;
@@ -37,7 +55,7 @@ try {
     $kernel = new Kernel($bootstrap);
     $kernel->run($argv);
 
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     echo "\033[31mNudelsalat Error: " . $e->getMessage() . "\033[0m\n";
     exit(1);
 }

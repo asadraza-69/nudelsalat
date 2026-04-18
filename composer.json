@@ -15,7 +15,7 @@
     "psr-4": {
       "Nudelsalat\\": "src/"
     },
-    "files": ["migrations/autoload.php"]
+    "files": ["autoload.php"]
   },
   "require": {
     "php": ">=8.1"
