@@ -1,7 +1,20 @@
 {
   "name": "nudelsalat/migrations",
   "type": "library",
+  "description": "State-based database migration engine for PHP with full ORM support",
+  "keywords": ["migration", "database", "orm", "schema", "mysql", "postgresql", "sqlite"],
+  "homepage": "https://github.com/asadraza-69/nudelsalat",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Asad Raza",
+      "email": "ar@logisticus.hamburg"
+    }
+  ],
   "autoload": {
+    "psr-4": {
+      "Nudelsalat\\": "src/"
+    },
     "files": ["migrations/autoload.php"]
   },
   "require": {
@@ -9,5 +22,10 @@
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
-  "bin": ["nudelsalat"]
+  "bin": ["nudelsalat"],
+  "extra": {
+    "branch-alias": {
+      "dev-main": "1.0.x-dev"
+    }
+  }
 }

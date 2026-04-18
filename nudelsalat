@@ -11,17 +11,17 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     exit(1);
 }
 
-use Beef\Config;
-use Beef\Bootstrap;
-use Beef\Console\Kernel;
+use Nudelsalat\Config;
+use Nudelsalat\Bootstrap;
+use Nudelsalat\Console\Kernel;
 
 // Find config file in project root (where command is run)
-$configFile = getcwd() . '/beef.config.php';
+$configFile = getcwd() . '/nudelsalat.config.php';
 
 if (!file_exists($configFile)) {
-    echo "Error: beef.config.php not found in project root.\n";
+    echo "Error: nudelsalat.config.php not found in project root.\n";
     echo "Please create one in your project root:\n";
-    echo "  cp beef/beef.config.php.example beef.config.php\n";
+    echo "  cp vendor/nudelsalat/migrations/nudelsalat.config.php.example nudelsalat.config.php\n";
     exit(1);
 }
 
@@ -38,6 +38,6 @@ try {
     $kernel->run($argv);
 
 } catch (\Exception $e) {
-    echo "\033[31mBeef Error: " . $e->getMessage() . "\033[0m\n";
+    echo "\033[31mNudelsalat Error: " . $e->getMessage() . "\033[0m\n";
     exit(1);
 }
