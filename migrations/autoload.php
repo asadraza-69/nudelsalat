@@ -2,7 +2,7 @@
 
 spl_autoload_register(function ($class) {
     if (strpos($class, 'Nudelsalat\\') === 0) {
-        $file = __DIR__ . '/src/' . str_replace('\\', '/', substr($class, 12)) . '.php';
+        $file = __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, 12)) . '.php';
         if (file_exists($file)) {
             require_once $file;
             return;
@@ -10,12 +10,12 @@ spl_autoload_register(function ($class) {
 
         // Handle Field subdirectory
         if (str_starts_with($class, 'Nudelsalat\\Migrations\\Fields\\')) {
-            require_once __DIR__ . '/src/Migrations/Fields/Field.php';
+            require_once __DIR__ . '/../src/Migrations/Fields/Field.php';
         }
         
         // Handle ORM subdirectory
         if (str_starts_with($class, 'Nudelsalat\\ORM\\')) {
-            $ormPath = __DIR__ . '/src/ORM/';
+            $ormPath = __DIR__ . '/../src/ORM/';
             // Load Query.php first for helper functions (Sum, Avg, Count, etc.)
             if (str_contains($class, 'Query') || str_contains($class, 'Aggregation') || 
                 str_contains($class, 'Paginator') || str_contains($class, 'Q\\') || 
