@@ -120,7 +120,9 @@ class Autodetector
             $preFieldOperations = [];
             $postFieldOperations = [];
 
-            $metadataOperations = $this->detectModelOptionChanges($name, $oldTable, $newTable);
+            // Check if model was renamed
+            $modelRenamed = isset($renamedModels[$name]);
+            $metadataOperations = $this->detectModelOptionChanges($name, $oldTable, $newTable, $modelRenamed);
             $operations = array_merge($operations, $metadataOperations['pre']);
 
             $addedFields = array_diff(array_keys($newColumns), array_keys($oldColumns));
