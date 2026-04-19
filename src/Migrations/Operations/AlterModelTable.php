@@ -75,16 +75,26 @@ class AlterModelTable extends Operation
      */
     public function databaseBackwards(SchemaEditor $schemaEditor, ProjectState $fromState, ProjectState $toState, StateRegistry $registry): void
     {
-        $oldTable = $toState->getTable($this->name);
-        $newTable = $fromState->getTable($this->name);
-
-        if ($oldTable && $newTable) {
-            $oldName = $oldTable->options['db_table'] ?? $this->name;
-            $newName = $newTable->options['db_table'] ?? $this->name;
-
+        // On rollback, get table from fromState (current state after forward)
+        $table = $fromState->getTable($this->name);
+        
+        if ($table) {
+            // Get: table was renamed TO this name during forward
+            $fromDbName = $table->options['db_table'] ?? $this->name;
+            // Get: table was named BEFORE forward (the original name)
+            $toDbName = $this->name; // Use model name as fallback
+            
+            // If we can find the old state, get original table name
+            if ($toState) {
+                $oldTable = $toState->getTable($this->name);
+                if ($oldTable) {
+                    $toDbName = $oldTable->options['db_table'] ?? $this->name;
+                }
+            }
+            
             // Skip if no actual table rename needed
-            if ($oldName !== $newName) {
-                $schemaEditor->renameTable($newName, $oldName);
+            if ($fromDbName !== $toDbName) {
+                $schemaEditor->renameTable($fromDbName, $toDbName);
             }
         }
     }

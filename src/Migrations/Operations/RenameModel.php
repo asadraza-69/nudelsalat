@@ -31,11 +31,6 @@ class RenameModel extends Operation
         $oldDbName = $oldTable?->options['db_table'] ?? $this->oldName;
         $newDbName = $newTable?->options['db_table'] ?? $this->newName;
         
-        // Skip if no actual table rename needed
-        if ($oldDbName === $newDbName) {
-            return;
-        }
-        
         $schemaEditor->renameTable($oldDbName, $newDbName);
     }
 
@@ -46,11 +41,6 @@ class RenameModel extends Operation
         
         $newDbName = $newTable?->options['db_table'] ?? $this->newName;
         $oldDbName = $oldTable?->options['db_table'] ?? $this->oldName;
-        
-        // Skip if no actual table rename needed
-        if ($newDbName === $oldDbName) {
-            return;
-        }
         
         $schemaEditor->renameTable($newDbName, $oldDbName);
     }
