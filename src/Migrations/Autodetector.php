@@ -436,7 +436,7 @@ class Autodetector
         return $left == $right;
     }
 
-    private function detectModelOptionChanges(string $tableName, \Nudelsalat\Schema\Table $oldTable, \Nudelsalat\Schema\Table $newTable): array
+    private function detectModelOptionChanges(string $tableName, \Nudelsalat\Schema\Table $oldTable, \Nudelsalat\Schema\Table $newTable, bool $modelRenamed = false): array
     {
         $pre = [];
         $post = [];
@@ -446,7 +446,9 @@ class Autodetector
 
         $oldDbTable = $oldOptions['db_table'] ?? null;
         $newDbTable = $newOptions['db_table'] ?? null;
-        if ($oldDbTable !== $newDbTable) {
+        
+        // Skip db_table change if model was renamed (RenameModel handles it)
+        if ($oldDbTable !== $newDbTable && !$modelRenamed) {
             $pre[] = new AlterModelTable($tableName, $newDbTable);
         }
 

@@ -75,8 +75,18 @@ class AlterModelTable extends Operation
      */
     public function databaseBackwards(SchemaEditor $schemaEditor, ProjectState $fromState, ProjectState $toState, StateRegistry $registry): void
     {
-        // The operation is reversible - just swap the direction
-        $this->databaseForwards($schemaEditor, $toState, $fromState, $registry);
+        $oldTable = $toState->getTable($this->name);
+        $newTable = $fromState->getTable($this->name);
+
+        if ($oldTable && $newTable) {
+            $oldName = $oldTable->options['db_table'] ?? $this->name;
+            $newName = $newTable->options['db_table'] ?? $this->name;
+
+            // Skip if no actual table rename needed
+            if ($oldName !== $newName) {
+                $schemaEditor->renameTable($newName, $oldName);
+            }
+        }
     }
 
     /**
