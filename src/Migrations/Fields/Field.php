@@ -229,25 +229,43 @@ class UUIDField extends Field
 
 class SlugField extends StringField
 {
-    public function getType(): string
-    {
-        return 'varchar(50)';
+    public function __construct(
+        int $length = 50,
+        bool $nullable = false,
+        mixed $default = null,
+        bool $primaryKey = false,
+        bool $autoIncrement = false,
+        array $options = []
+    ) {
+        parent::__construct($length, $nullable, $default, $primaryKey, $autoIncrement, $options);
     }
 }
 
 class EmailField extends StringField
 {
-    public function getType(): string
-    {
-        return 'varchar(254)';
+    public function __construct(
+        int $length = 254,
+        bool $nullable = false,
+        mixed $default = null,
+        bool $primaryKey = false,
+        bool $autoIncrement = false,
+        array $options = []
+    ) {
+        parent::__construct($length, $nullable, $default, $primaryKey, $autoIncrement, $options);
     }
 }
 
 class URLField extends StringField
 {
-    public function getType(): string
-    {
-        return 'varchar(200)';
+    public function __construct(
+        int $length = 200,
+        bool $nullable = false,
+        mixed $default = null,
+        bool $primaryKey = false,
+        bool $autoIncrement = false,
+        array $options = []
+    ) {
+        parent::__construct($length, $nullable, $default, $primaryKey, $autoIncrement, $options);
     }
 }
 

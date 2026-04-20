@@ -2,6 +2,16 @@
 
 namespace Nudelsalat\ORM;
 
+use Nudelsalat\Migrations\Fields\BooleanField;
+use Nudelsalat\Migrations\Fields\DecimalField;
+use Nudelsalat\Migrations\Fields\EmailField;
+use Nudelsalat\Migrations\Fields\Field as MigrationField;
+use Nudelsalat\Migrations\Fields\ForeignKey;
+use Nudelsalat\Migrations\Fields\IntField;
+use Nudelsalat\Migrations\Fields\SlugField;
+use Nudelsalat\Migrations\Fields\StringField;
+use Nudelsalat\Migrations\Fields\URLField;
+use Nudelsalat\Migrations\Fields\UUIDField;
 use Nudelsalat\Schema\Constraint;
 use Nudelsalat\Schema\Index;
 
@@ -451,19 +461,178 @@ abstract class Model
                 continue;
             }
 
-            $value = $data[$name] ?? null;
+            $provided = array_key_exists($name, $data);
+            $value = $provided ? $data[$name] : null;
 
             $isNullable = $field->nullable ?? false;
             $hasDefault = $field->default !== null;
             $isAutoIncrement = $field->autoIncrement ?? false;
 
-            if (!$isNullable && !$hasDefault && !$isAutoIncrement && $value === null) {
+            if (
+                $value === null
+                && !$isNullable
+                && !$isAutoIncrement
+                && (!$hasDefault || $provided)
+            ) {
                 $errors[$name] = "Field '{$name}' cannot be null";
+                continue;
+            }
+
+            if ($value !== null) {
+                $error = static::validateFieldValue($name, $field, $value);
+                if ($error !== null) {
+                    $errors[$name] = $error;
+                }
             }
         }
 
         $customErrors = static::cleanFields($data);
         return array_merge($errors, $customErrors);
+    }
+
+    private static function validateFieldValue(string $name, MigrationField $field, mixed $value): ?string
+    {
+        $choiceError = static::validateChoices($field, $value);
+        if ($choiceError !== null) {
+            return $choiceError;
+        }
+
+        if ($field instanceof StringField) {
+            $stringValue = static::coerceToString($value);
+            if ($stringValue === null) {
+                return "Field '{$name}' must be a string.";
+            }
+
+            $maxLength = $field->length ?? null;
+            if (is_int($maxLength) && $maxLength > 0) {
+                $length = static::stringLength($stringValue);
+                if ($length > $maxLength) {
+                    return "Ensure this value has at most {$maxLength} characters (it has {$length}).";
+                }
+            }
+
+            if ($field instanceof EmailField) {
+                if (filter_var($stringValue, FILTER_VALIDATE_EMAIL) === false) {
+                    return 'Enter a valid email address.';
+                }
+            }
+
+            if ($field instanceof URLField) {
+                if (filter_var($stringValue, FILTER_VALIDATE_URL) === false) {
+                    return 'Enter a valid URL.';
+                }
+            }
+
+            if ($field instanceof SlugField) {
+                if (!preg_match('/^[-a-zA-Z0-9_]+$/', $stringValue)) {
+                    return 'Enter a valid slug consisting of letters, numbers, underscores or hyphens.';
+                }
+            }
+
+            return null;
+        }
+
+        if ($field instanceof UUIDField) {
+            $stringValue = static::coerceToString($value);
+            if ($stringValue === null) {
+                return "Field '{$name}' must be a UUID string.";
+            }
+            if (!preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $stringValue)) {
+                return 'Enter a valid UUID.';
+            }
+            return null;
+        }
+
+        if ($field instanceof IntField || $field instanceof ForeignKey) {
+            if (is_int($value)) {
+                return null;
+            }
+            if (is_string($value) && filter_var($value, FILTER_VALIDATE_INT) !== false) {
+                return null;
+            }
+            return 'Enter a whole number.';
+        }
+
+        if ($field instanceof BooleanField) {
+            if (is_bool($value)) {
+                return null;
+            }
+            if (is_int($value) && ($value === 0 || $value === 1)) {
+                return null;
+            }
+            if (is_string($value)) {
+                $lower = strtolower($value);
+                if (in_array($lower, ['0', '1', 'true', 'false'], true)) {
+                    return null;
+                }
+            }
+            return 'Enter a valid boolean.';
+        }
+
+        if ($field instanceof DecimalField) {
+            if (is_int($value) || is_float($value)) {
+                return null;
+            }
+            if (is_string($value) && is_numeric($value)) {
+                return null;
+            }
+            return 'Enter a number.';
+        }
+
+        return null;
+    }
+
+    private static function validateChoices(MigrationField $field, mixed $value): ?string
+    {
+        $choices = $field->getChoices();
+        if ($choices === null) {
+            return null;
+        }
+
+        // Choices can be declared as an associative array (value => label) or
+        // as a list of [value, label] pairs. We validate against the values.
+        $allowed = [];
+        foreach ($choices as $key => $choice) {
+            if (is_array($choice) && array_key_exists(0, $choice)) {
+                $allowed[] = $choice[0];
+                continue;
+            }
+            if (is_int($key)) {
+                $allowed[] = $choice;
+                continue;
+            }
+            $allowed[] = $key;
+        }
+
+        foreach ($allowed as $allowedValue) {
+            if ($allowedValue === $value) {
+                return null;
+            }
+            if (is_scalar($allowedValue) && is_scalar($value) && (string) $allowedValue === (string) $value) {
+                return null;
+            }
+        }
+
+        return 'Select a valid choice. That choice is not one of the available choices.';
+    }
+
+    private static function coerceToString(mixed $value): ?string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value) || is_bool($value)) {
+            return (string) $value;
+        }
+        if (is_object($value) && method_exists($value, '__toString')) {
+            return (string) $value;
+        }
+        return null;
+    }
+
+    private static function stringLength(string $value): int
+    {
+        return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
     }
 
     protected static function cleanFields(array $data): array
